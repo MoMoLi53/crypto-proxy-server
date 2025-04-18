@@ -26,12 +26,18 @@ app.get('/binance/price', async (req, res) => {
 });
 
 // Binance: Tarihsel OHLCV verisi
+// Hatalı veya eksik timestamp'larda loglama ve tip kontrolü eklendi
 app.get('/binance/history', async (req, res) => {
   const { symbol, interval, startTime, endTime } = req.query;
   if (!symbol || !interval || !startTime || !endTime) {
     return res.status(400).json({ error: 'symbol, interval, startTime, endTime parametreleri zorunludur' });
   }
-  const params = new URLSearchParams({ symbol, interval, startTime, endTime });
+  console.log(`[Proxy] Tarihsel veri isteği: ${symbol}, ${interval}, ${startTime}, ${endTime}`);
+  const params = new URLSearchParams();
+  params.append('symbol', symbol.toString());
+  params.append('interval', interval.toString());
+  params.append('startTime', startTime.toString());
+  params.append('endTime', endTime.toString());
   try {
     const { data } = await axios.get(`https://api.binance.com/api/v3/klines?${params}`);
     res.json(data);
