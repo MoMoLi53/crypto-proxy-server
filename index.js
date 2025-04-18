@@ -8,10 +8,21 @@ app.get('/', (req, res) => {
   res.send('Proxy sunucu aktif 🚀');
 });
 
+// Binance son fiyat verisi (anlık)
+app.get('/binance/price', async (req, res) => {
+  const { symbol } = req.query;
+  try {
+    const response = await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Fiyat verisi çekilemedi', detail: error.message });
+  }
+});
+
+// MEXC Kline verisi (hala aktif kalabilir)
 app.get('/mexc/ohlcv', async (req, res) => {
   const { symbol, interval } = req.query;
   const url = `https://api.mexc.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=100`;
-
   try {
     const response = await axios.get(url);
     res.json(response.data);
@@ -21,5 +32,5 @@ app.get('/mexc/ohlcv', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Proxy sunucu çalışıyor → http://localhost:${PORT}`);
+  console.log(`Proxy sunucu port ${PORT} üzerinde çalışıyor`);
 });
