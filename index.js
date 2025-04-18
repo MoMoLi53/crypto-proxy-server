@@ -1,3 +1,5 @@
+// index.js - tarihsel veri ve anlık grafik desteği için proxy sunucu kodu
+
 import express from 'express';
 import axios from 'axios';
 
@@ -8,7 +10,7 @@ app.get('/', (req, res) => {
   res.send('Proxy sunucu aktif 🚀');
 });
 
-// Binance son fiyat verisi (anlık)
+// Binance: Anlık fiyat
 app.get('/binance/price', async (req, res) => {
   const { symbol } = req.query;
   try {
@@ -19,15 +21,21 @@ app.get('/binance/price', async (req, res) => {
   }
 });
 
-// MEXC Kline verisi (hala aktif kalabilir)
-app.get('/mexc/ohlcv', async (req, res) => {
-  const { symbol, interval } = req.query;
-  const url = `https://api.mexc.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=100`;
+// Binance: Tarihsel OHLCV verisi
+app.get('/binance/history', async (req, res) => {
+  const { symbol, interval, startTime, endTime } = req.query;
+
+  if (!symbol || !interval || !startTime || !endTime) {
+    return res.status(400).json({ error: 'symbol, interval, startTime, endTime gerekli' });
+  }
+
+  const params = new URLSearchParams({ symbol, interval, startTime, endTime });
+
   try {
-    const response = await axios.get(url);
-    res.json(response.data);
+    const { data } = await axios.get(`https://api.binance.com/api/v3/klines?${params}`);
+    res.json(data);
   } catch (err) {
-    res.status(500).json({ error: 'MEXC API hatası', detail: err.message });
+    res.status(500).json({ error: 'Binance API hatası', detail: err.message });
   }
 });
 
