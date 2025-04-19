@@ -1,34 +1,35 @@
-import express from 'express';
-import WebSocket from 'ws';
-import cors from 'cors';
+const WebSocket = require('ws');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+// 🔹 Takip etmek istediğin coin sembolleri (küçük harf)
+const symbols = ['btcusdt', 'ethusdt', 'solusdt', 'adausdt', 'xrpusdt','zkusdt','dotusdt','arkmusdt','eigenusdt'];
 
-app.use(cors());
+// 🔹 WebSocket URL'sini coin listesine göre oluştur
+const url = `wss://stream.binance.com:9443/stream?streams=${symbols.map(s => `${s}@trade`).join('/')}`;
 
-let prices = {};
+// 🔹 WebSocket bağlantısını başlat
+const ws = new WebSocket(url);
 
-const symbols = ['btcusdt', 'ethusdt', 'solusdt'];
-const wsUrl = `wss://stream.binance.com:9443/stream?streams=${symbols.map(s => `${s}@trade`).join('/')}`;
-const ws = new WebSocket(wsUrl);
+ws.on('open', () => {
+  console.log('✅ Çoklu Coin WebSocket bağlantısı kuruldu.');
+});
 
 ws.on('message', (data) => {
   const parsed = JSON.parse(data);
-  const symbol = parsed.stream.split('@')[0].toUpperCase();
+  const stream = parsed.stream;     // Örnek: btcusdt@trade
   const trade = parsed.data;
 
-  prices[symbol] = {
-    price: trade.p,
-    qty: trade.q,
-    time: trade.T,
-  };
+  const symbol = stream.split('@')[0].toUpperCase();  // BTCUSDT
+  const price = trade.p;
+  const quantity = trade.q;
+  const time = new Date(trade.T).toLocaleTimeString();
+
+  console.log(`[${symbol}] ${time} → Fiyat: ${price} | Miktar: ${quantity}`);
 });
 
-app.get('/prices', (req, res) => {
-  res.json(prices);
+ws.on('error', (err) => {
+  console.error('❌ WebSocket HATASI:', err);
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Proxy server çalışıyor. Port: ${PORT}`);
+ws.on('close', () => {
+  console.log('🔌 WebSocket bağlantısı kapatıldı.');
 });
